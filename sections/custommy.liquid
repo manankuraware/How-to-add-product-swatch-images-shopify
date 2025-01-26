@@ -1,0 +1,224 @@
+{{ 'mainprodtmpitg.css' | asset_url | stylesheet_tag }}
+<style>
+  :root {
+    --hero-background-color: {{ section.settings.hero_background_color }};
+    --hero-font-size: {{ section.settings.hero_font_size }}px;
+  }
+</style>
+
+<!-- Single Product Section Starts -->
+<section class="single-product page-width">
+  <div class="container">
+    {% assign product = all_products[section.settings.selected_product] %}
+    {% if product %}
+      <div class="product-left">
+        {% assign featuedimg = product.selected_or_first_available_variant.featured_image %}
+        {% if featuedimg %}
+          <div class="feat-img">
+            <img
+              id="product-img"
+              src="{{ featuedimg | image_url }}"
+              alt="{{ featuedimg.alt }}"
+              height="auto"
+              width="auto"
+            >
+          </div>
+        {% else %}
+          <div class="feat-img">
+            <img
+              src="{{ product.featured_image | image_url }}"
+              alt="{{ product.featured_image.alt }}"
+              height="auto"
+              width="auto"
+            >
+          </div>
+        {% endif %}
+        <ul class="mediaprod">
+          {% for image in product.images %}
+            <li class="{% if image==featuedimg %}selected{% endif %}">
+              <img src="{{ image | image_url }}" alt="{{ image.alt | escape }}" height="auto" width="auto">
+            </li>
+          {% endfor %}
+        </ul>
+      </div>
+    {% else %}
+      <p>No product selected. Please select a product in the theme editor.</p>
+    {% endif %}
+
+    <div class="prod-rgt">
+      <h2>{{ product.title }}</h2>
+      <div class="pricesflx">
+        <p class="product-compare">{{ product.selected_or_first_available_variant.compare_at_price | money }}</p>
+        <p class="product-price">{{ product.selected_or_first_available_variant.price | money }}</p>
+      </div>
+      <div class="mypdesc">{{ product.description }}</div>
+      {% form 'product', product %}
+        <input id="myproduct-id" type="hidden" name="id" value="{{ product.selected_or_first_available_variant.id }}">
+        {% if product.variants.size > 1 %}
+          <div class="product-option">
+            {% for option in product.options_with_values %}
+              <fieldset>
+                <legend>{{ option.name }}</legend>
+                {% for value in option.values %}
+                  <div>
+                    <input
+                      {% if option.selected_value == value %}
+                        checked
+                      {% endif %}
+                      type="radio"
+                      name="{{ option.name }}"
+                      value="{{ value }}"
+                      id="{{ option.name | handleize }}-{{ value | handleize }}"
+                    >
+                    <label for="{{ option.name | handleize }}-{{ value | handleize }}">{{ value }}</label>
+                  </div>
+                {% endfor %}
+              </fieldset>
+            {% endfor %}
+          </div>
+        {% endif %}
+        <button type="submit">Add to Cart</button>
+      {% endform %}
+    </div>
+  </div>
+</section>
+
+<script>
+   var formatMoney = function(cents, format) {
+    if (typeof cents == 'string') { cents = cents.replace('.',''); }
+    var value = '';
+    var placeholderRegex = /\{\{\s*(\w+)\s*\}\}/;
+    var formatString = (format || this.money_format);
+
+    function defaultOption(opt, def) {
+       return (typeof opt == 'undefined' ? def : opt);
+    }
+
+    function formatWithDelimiters(number, precision, thousands, decimal) {
+      precision = defaultOption(precision, 2);
+      thousands = defaultOption(thousands, ',');
+      decimal   = defaultOption(decimal, '.');
+
+      if (isNaN(number) || number == null) { return 0; }
+
+      number = (number/100.0).toFixed(precision);
+
+      var parts   = number.split('.'),
+          dollars = parts[0].replace(/(\d)(?=(\d\d\d)+(?!\d))/g, '$1' + thousands),
+          cents   = parts[1] ? (decimal + parts[1]) : '';
+
+      return dollars + cents;
+    }
+
+    switch(formatString.match(placeholderRegex)[1]) {
+      case 'amount':
+        value = formatWithDelimiters(cents, 2);
+        break;
+      case 'amount_no_decimals':
+        value = formatWithDelimiters(cents, 0);
+        break;
+      case 'amount_with_comma_separator':
+        value = formatWithDelimiters(cents, 2, '.', ',');
+        break;
+      case 'amount_no_decimals_with_comma_separator':
+        value = formatWithDelimiters(cents, 0, '.', ',');
+        break;
+    }
+
+    return formatString.replace(placeholderRegex, value);
+  };
+</script>
+<script>
+  // finding match variant in product
+  var product={{product | json}};
+  // console.log(product);
+
+  document.querySelectorAll('.product-option input[type="radio"]').forEach(radio=>{
+    radio.addEventListener("change",()=>{
+      var selectedOptions=[];
+
+      document.querySelectorAll('.product-option input[type="radio"]:checked').forEach(radio=>{
+        selectedOptions.push(radio.value);
+      })
+      // console.log(selectedOptions);
+      var matchedVariant=product.variants.find(variant=>{
+        var pass=true;
+        for(var i=0;i<selectedOptions.length;i++){
+          if(selectedOptions.indexOf(variant.options[i]) === -1){
+            pass=false;
+            break;
+          }
+        }
+        return pass;
+      })
+      // console.log(matchedVariant.id);
+      document.getElementById('myproduct-id').value = matchedVariant.id;
+
+
+      // change url
+      var url=new URLParse(window.location.href,true);
+      url.query.variant=matchedVariant.id;
+      window.history.replaceState(null,null,url.toString());
+
+      // change prices
+      document.querySelector(".product-price").textContent = formatMoney(matchedVariant.price,"{{ shop.money_format }}");
+      document.querySelector(".product-compare").textContent = formatMoney(matchedVariant.compare_at_price,"{{ shop.money_format }}");
+
+      // change image
+      if(matchedVariant.featured_image){
+        document.querySelector("#product-img").setAttribute('src',matchedVariant.featured_image.src);
+        document.querySelector('.mediaprod li.selected').classList.remove('selected');
+        document.querySelectorAll('.mediaprod li')[matchedVariant.featured_image.position -1].classList.add('selected');
+      }
+    })
+  })
+
+
+  // change main image on thumbnail click
+  document.querySelectorAll('.mediaprod li').forEach(li=>{
+    li.addEventListener("click",()=>{
+      document.querySelector('.mediaprod li.selected').classList.remove('selected');
+      li.classList.add('selected');
+      document.querySelector("#product-img").setAttribute("src",li.querySelector('img').getAttribute('src'));
+    })
+  })
+</script>
+<!--
+  for url change add this cdn to theme.liquid
+  <script src="
+  https://cdn.jsdelivr.net/npm/url-parse@1.5.10/dist/url-parse.min.js
+  "></script>
+-->
+{% schema %}
+{
+    "name": "Single Product",
+    "settings": [
+        {
+            "type": "product",
+            "id": "selected_product",
+            "label": "Select Product",
+        },
+        {
+          "type": "color_background",
+          "id": "hero_background_color",
+          "label": "Background",
+          "default": "linear-gradient(#ffffff, #000000)"
+        },
+        {
+          "type": "range",
+          "id": "hero_font_size",
+          "min": 14,
+          "max": 24,
+          "step": 1,
+          "unit": "px",
+          "label": "Font size",
+          "default": 16
+        }
+    ],
+    "presets": [
+        {
+            "name": "Single Product",
+        }
+    ]
+}
+{% endschema %}
