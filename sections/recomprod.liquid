@@ -154,7 +154,7 @@
   }
 
   // Get the current product type
-  const productType = "cloths";
+  const productType = "{{ product.type }}";
 
   // Fetch related products based on product type
   fetch(window.Shopify.routes.root + `recommendations/products.json?product_type=${productType}&limit=3`)
