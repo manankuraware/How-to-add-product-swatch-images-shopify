@@ -16,9 +16,16 @@
         "hero_background_color": "linear-gradient(108deg, rgba(239, 168, 70, 0.91) 12%, rgba(239, 199, 78, 0.91) 57%, rgba(215, 202, 146, 1) 81%, rgba(255, 255, 255, 1) 95%)",
         "hero_font_size": 18
       }
+    },
+    "recomprod_HydjC3": {
+      "type": "recomprod",
+      "settings": {
+        "heading": "You may also like"
+      }
     }
   },
   "order": [
-    "main"
+    "main",
+    "recomprod_HydjC3"
   ]
 }
