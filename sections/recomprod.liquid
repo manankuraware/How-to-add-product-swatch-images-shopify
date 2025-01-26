@@ -76,7 +76,7 @@
     return html
   }
 
-  fetch(window.Shopify.routes.root + "recommendations/products.json?product_type="cloths"&limit=3")
+  fetch(window.Shopify.routes.root + "recommendations/products.json?product_type=cloths&limit=3")
     .then(response => response.json())
     .then(({ products }) => {
       products.forEach(product => {
