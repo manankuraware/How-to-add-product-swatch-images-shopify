@@ -99,17 +99,10 @@
         "padding_top": 36,
         "padding_bottom": 28
       }
-    },
-    "recomprod_DctQ43": {
-      "type": "recomprod",
-      "settings": {
-        "heading": "You may also like"
-      }
     }
   },
   "order": [
     "main",
-    "related-products",
-    "recomprod_DctQ43"
+    "related-products"
   ]
 }
